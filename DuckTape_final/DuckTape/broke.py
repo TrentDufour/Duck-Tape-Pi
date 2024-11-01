@@ -4,7 +4,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 load_dotenv()
 genai.configure(api_key=os.getenv("API_KEY"))
-#genai.configure(api_key = "AIzaSyCUim-8VDqLNynhFeKLPHH_-tcS14vlVNM")
+
 
 
 img = PIL.Image.open("images/vegeta.jpg")
