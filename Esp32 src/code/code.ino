@@ -17,8 +17,8 @@ char* ftp_user = "testuser";        // testuser
 char* ftp_pass = "1";               // 1
 
 // Motion detection parameters
-int motion_min = 10000;
-int motion_max = 20000;
+int motion_min = 4500;
+int motion_max = 8000;
 
 // Variables for frame comparison
 uint8_t* prev_frame = nullptr;
@@ -26,15 +26,13 @@ size_t prev_frame_len = 0;
 
 // Function Prototypes
 int frameDifference(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2);
+int frameDifferenceN(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2);
 
 // Create FTP client instance
 ESP32_FTPClient ftp(ftp_ip, ftp_user, ftp_pass);
 
 // Image counter
 int ctr;
-
-// Initialize timer variables
-unsigned long timer, spot_time;
 
 ///// Main /////
 void setup() {
@@ -64,8 +62,8 @@ void setup() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   // Frame size and image quality
-  config.frame_size = FRAMESIZE_QVGA;
-  config.jpeg_quality = 8;
+  config.frame_size = FRAMESIZE_VGA;
+  config.jpeg_quality = 4;
   config.fb_count = 1;
 
   // Initialize camera
@@ -77,8 +75,8 @@ void setup() {
   // Configure camera settings for consistency of images
   sensor_t * s = esp_camera_sensor_get();
   s->set_vflip(s, 1);                        // flip camera perespective vertically
-  s->set_framesize(s, FRAMESIZE_QVGA);       // resolution
-  s->set_quality(s, 8);                      // quality level
+  s->set_framesize(s, FRAMESIZE_VGA);       // resolution
+  s->set_quality(s, 4);                      // quality level
   s->set_brightness(s, 0);                   // brightness
   s->set_contrast(s, 0);                     // contrast
   s->set_whitebal(s, 0);                     // auto white balance
@@ -97,8 +95,6 @@ void setup() {
 }
 
 void loop() {
-  // Start timer if not already started
-  //timer = millis();
 
   // Capture current frame
   camera_fb_t* current_frame = esp_camera_fb_get();
@@ -110,7 +106,7 @@ void loop() {
   else {
     if (prev_frame) {
       // Get frame difference
-      int difference = frameDifference(prev_frame, prev_frame_len, current_frame->buf, current_frame->len);
+      int difference = frameDifferenceN(prev_frame, prev_frame_len, current_frame->buf, current_frame->len);
       Serial.print("Difference = ");
       Serial.println(difference);
 
@@ -167,14 +163,13 @@ void loop() {
 
 // Function to calculate frame difference of every 10th pixel
 int frameDifference(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) {
-  unsigned int mismatch_correction, diff, pixel, pixel2;
+  int diff, pixel1, pixel2;
   if (len1 != len2) {
     Serial.println("Frame size mismatch detected");
     Serial.print("len1 = ");
     Serial.println(len1);
     Serial.print("len2 = ");
     Serial.println(len2);
-    mismatch_correction = 
     return 0;
   }
 
@@ -187,13 +182,11 @@ int frameDifference(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) 
     diff += abs(pixel1 - pixel2);
   }
 
-  diff += mismatch_correction;
-
   return diff;
 }
 
-int frameDifference2P0(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) {
-  unsigned int  diff, pixel1, pixel2, value1, value2;
+int frameDifferenceN(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) {
+  int diff, pixel1, pixel2, value1, value2;
   size_t ifactor1, ifactor2;
   ifactor1 = len1 / 100;
   ifactor2 = len2 / 100;
@@ -201,7 +194,7 @@ int frameDifference2P0(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len
   diff = 0;
 
   // Iterate over the bytes, sampling every 20th pixel to reduce sensitivity
-  for (size_t i = 0; i*ifactor1 < len1 & i*ifactor2 < len2; ) {
+  for (size_t i = 0; i*ifactor1 < len1 & i*ifactor2 < len2; i++) {
     pixel1 = i * ifactor1;
     pixel2 = i * ifactor2;
 
@@ -210,8 +203,6 @@ int frameDifference2P0(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len
 
     diff += abs(value1 - value2);
   }
-
-  diff /= 80;
 
   return diff;
 }
