@@ -74,8 +74,8 @@ void setup() {
 
   // Configure camera settings for consistency of images
   sensor_t * s = esp_camera_sensor_get();
-  s->set_vflip(s, 1);                        // flip camera perespective vertically
-  s->set_framesize(s, FRAMESIZE_VGA);       // resolution
+  s->set_vflip(s, 0);                        // flip camera perespective vertically
+  s->set_framesize(s, FRAMESIZE_VGA);        // resolution
   s->set_quality(s, 4);                      // quality level
   s->set_brightness(s, 0);                   // brightness
   s->set_contrast(s, 0);                     // contrast
@@ -161,7 +161,7 @@ void loop() {
 
 // Functions
 
-// Function to calculate frame difference of every 10th pixel
+// Function to calculate frame difference
 int frameDifference(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) {
   int diff, pixel1, pixel2;
   if (len1 != len2) {
@@ -185,6 +185,7 @@ int frameDifference(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) 
   return diff;
 }
 
+// New Function to caculate frame difference (use this instead of the old one)
 int frameDifferenceN(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2) {
   int diff, pixel1, pixel2, value1, value2;
   size_t ifactor1, ifactor2;
@@ -193,7 +194,7 @@ int frameDifferenceN(uint8_t* frame1, size_t len1, uint8_t* frame2, size_t len2)
 
   diff = 0;
 
-  // Iterate over the bytes, sampling every 20th pixel to reduce sensitivity
+  // Iterate over the bytes, sampling every 1% pixel of the frames to reduce sensitivity
   for (size_t i = 0; i*ifactor1 < len1 & i*ifactor2 < len2; i++) {
     pixel1 = i * ifactor1;
     pixel2 = i * ifactor2;
